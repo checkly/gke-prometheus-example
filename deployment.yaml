@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: gmp-test
+  name: checkly-prom-proxy
+  labels:
+    app.kubernetes.io/name: checkly-prom-proxy
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: checkly-prom-proxy
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: checkly-prom-proxy
+    spec:
+      containers:
+      - image: us-central1-docker.pkg.dev/PROJECT_ID/hello-repo/helloworld-gke:latest
+        name: checkly-prom-proxy
+        env:
+        - name: checkly_endpoint
+          value: "https://api.checklyhq.com/accounts/account_id_here/prometheus/metrics"
+        - name: checkly_bearer
+          value: "bearertoken_here"
+        ports:
+        - name: metrics
+          containerPort: 8080
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-example-app
+  namespace: gmp-test
+spec:
+  selector:
+    app.kubernetes.io/name: checkly-prom-proxy
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: metrics
+  type: LoadBalancer
